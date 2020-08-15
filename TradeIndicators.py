@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-import time
 import numpy as np
 
 """ Base file used for my crypto  trading Algorithms, Indicators and formatting. """

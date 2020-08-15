@@ -4,18 +4,13 @@
 run
 
 '''
-import os
-import sys
-import time
-import json
-import hashlib
+import configparser
 import logging
-import threading
+
 from core import botCore
 
 ## Config File Path.
-cwd = os.getcwd()
-settings = ("{0}/settings".format(cwd))
+config_file = ("./settings.cfg")
 ##-------------------->
 
 
@@ -27,7 +22,6 @@ formatter = logging.Formatter('%(asctime)s:%(name)s:%(message)s')
 file_handler = logging.FileHandler('runtimeLogs.log')
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
-
 logger.addHandler(file_handler)
 
 ##
@@ -38,60 +32,36 @@ coreManThreadActive = False
 bot_core = None
 ##-------------------->
 
+                
+def read_config():
 
-with open('settings', 'r') as file:
+    config = configparser.ConfigParser()
+    config.read(config_file)
 
-    for line in file.readlines():
-        key, data = line.split('=')
+    runType = (config['trader']['runType'])
+    mainInterval = (config['trader']['traderCurrency'])
+    MAC = float(config['trader']['traderCurrency'])
 
-        if data != None:
-            data = data.replace('\n', '')
+    if runType is not 'REAL':
+        privateKey = None
+        publicKey = None
+    else:
+        publicKey = (config['keys']['publicKey'])
+        privateKey = (config['keys']['privateKey'])
 
-        if key == 'publicKey':
-            ## API public key.
-            publicKey = data
+    markets = (config['trader']['markets'])
+    markets = markets.replace(' ', '')
+    markets_trading = markets.split(',')
 
-        elif key == 'markets':
-            ## API private key.
-
-            data = data.replace(' ', '')
-
-            if ',' in data:
-                data = data.split(',')
-            else:
-                data = [data]
-
-            markets_trading = data
-
-        elif key == 'privateKey':
-            ## API private key.
-            privateKey = data
-
-        elif key == 'runType':
-            ## The type of run (real or not).
-            runType = data.upper()
-
-            if data.upper() != 'REAL':
-                publicKey = None
-                privateKey = None
-
-        elif key == 'mainInterval':
-            ## Main interval per market.
-            mainInterval = data
-
-        elif key == 'traderCurrency':
-            ## Maxcurreny per trader
-            MAC = float(data)
-
-        elif key == 'debugLevel':
-            ## Set the debug level during runtime.
-            if data == 'warning':
-                logger.setLevel(logging.WARNING)
-            if data == 'debug':
-                logger.setLevel(logging.DEBUG)
-            else:
-                logger.setLevel(logging.INFO)
-
+    if 'debug' in config:
+        debugLevel = config['debug']['debugLevel']    
+        if debugLevel == 'warning':
+            logger.setLevel(logging.WARNING)
+        elif debugLevel == 'debug':
+            logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    return runType, MAC, markets_trading, mainInterval, publicKey, privateKey    
 
 def main():
     '''
@@ -102,7 +72,10 @@ def main():
     '''
     global bot_core
 
+    runType, MAC, markets_trading, mainInterval, publicKey, privateKey = read_config()
+    
     print('Starting in {0} mode.'.format(runType.upper()))
+    print(runType, MAC, markets_trading, mainInterval, publicKey, privateKey)
     
     ## <----------------------------------| RUNTIME CHECKS |-----------------------------------> ##
     bot_core = botCore.BotCore(runType, MAC, markets_trading, mainInterval, publicKey, privateKey)
@@ -116,6 +89,5 @@ def main():
 
     logging.error('Unable to start collecting.')
 
-
-if __name__ == '__main__':
+if __name__ == '__main__':    
     main()
