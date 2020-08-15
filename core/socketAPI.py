@@ -1,16 +1,15 @@
 #! /usr/bin/env python3
 
-'''
+"""
 socketAPI
+"""
 
-'''
-import time
 import json
-import hashlib
 import logging
-import websocket
 import threading
+import time
 
+import websocket
 
 ## sets up the socket BASE for binances socket API.
 SOCKET_BASE = 'wss://stream.binance.com:9443'
@@ -27,7 +26,6 @@ class BinanceSOCK:
         self.socketBuffer = {}
 
         self.ws = None
-        
 
     def start(self, markets, query):
         '''
@@ -42,7 +40,7 @@ class BinanceSOCK:
         logging.debug('SOCKET: Setting up buffer.')
         socketBuffer = {}
         for market in markets:
-            socketBuffer.update({market:{'depth':{'bids':[], 'asks':[]}, 'candle':{}}})
+            socketBuffer.update({market: {'depth': {'bids': [], 'asks': []}, 'candle': {}}})
         self.socketBuffer = socketBuffer
 
         ## -------------------------------------------------------------- ##
@@ -72,41 +70,36 @@ class BinanceSOCK:
         self.socketRunning = True
         logging.info('SOCKET: Sucessfully established the socket.')
 
-
     def stop(self):
         self.ws.close()
 
         while self.socketRunning:
             time.sleep(0.2)
 
-
     def get_buffer(self):
         '''
         This is called for retrival of the current data stored in the buffer object.
         '''
-        return(self.socketBuffer)
-
+        return (self.socketBuffer)
 
     def create_socket(self):
         '''
         This is used to initilise connection and set it up to the exchange.
         '''
         self.ws = websocket.WebSocketApp(self.destURL,
-            on_open = self._on_Open,
-            on_message = self._on_Message,
-            on_error = self._on_Error,
-            on_close = self._on_Close)
+                                         on_open=self._on_Open,
+                                         on_message=self._on_Message,
+                                         on_error=self._on_Error,
+                                         on_close=self._on_Close)
 
         wsthread = threading.Thread(target=lambda: self.ws.run_forever())
         wsthread.start()
-
 
     def _on_Open(self):
         '''
         This is called to manually open the websocket connection.
         '''
         logging.debug('SOCKET: Websocket Opened.')
-
 
     def _on_Message(self, message):
         '''
@@ -125,29 +118,27 @@ class BinanceSOCK:
             logging.warning('SOCKET: market slicing: {0}'.format(e))
 
         if market in self.socketBuffer:
-            if data['stream'][atIndex+1:atIndex+6] == 'depth':
+            if data['stream'][atIndex + 1:atIndex + 6] == 'depth':
                 if data['data']['bids'] != []:
                     self.socketBuffer[market]['depth']['bids'] = data['data']['bids']
                     self.socketBuffer[market]['depth']['asks'] = data['data']['asks']
             else:
                 cData = data['data']['k']
                 candle = {
-                    'time':int(cData['t']), 
-                    'open':float(cData['o']),
-                    'high':float(cData['h']),
-                    'low':float(cData['l']),
-                    'close':float(cData['c']),
-                    'volume':float(cData['v'])}
+                    'time': int(cData['t']),
+                    'open': float(cData['o']),
+                    'high': float(cData['h']),
+                    'low': float(cData['l']),
+                    'close': float(cData['c']),
+                    'volume': float(cData['v'])}
 
                 self.socketBuffer[market]['candle'] = candle
-
 
     def _on_Error(self, error):
         '''
         This is called when the socket recives an connection based error.
         '''
         logging.warning('SOCKET: {0}'.format(error))
-
 
     def _on_Close(self):
         '''

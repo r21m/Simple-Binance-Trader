@@ -1,16 +1,16 @@
 
 #! /usr/bin/env python3
 
-'''
+"""
 Botcore
 
-'''
-import sys
-import time
+"""
+
 import logging
 import threading
-import conditions as con
+import time
 from decimal import Decimal
+
 from . import rest_api, socketAPI, trader
 
 ## Base historic candle reach.
@@ -21,13 +21,13 @@ class BotCore():
 
 
     def __init__(self, run_type, MAC, trading_markets, candle_Interval, publicKey, privateKey):
-        '''  
+        """
          #
          #
          #
          #
          #
-        '''
+        """
         logging.debug('Attempting to initilize bot core.')
 
         self.rest_api = rest_api.BinanceREST(publicKey, privateKey)

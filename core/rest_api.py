@@ -4,17 +4,15 @@
 restAPI
 
 '''
-import os
 import hmac
-import time
-import json
 import logging
-import requests
-import numpy as np
-from . import reqCheck
+import time
 from hashlib import sha256
 from urllib.parse import urlencode
 
+import requests
+
+from . import reqCheck
 
 ## sets up the rest BASE for binances rest API.
 REST_BASE = 'https://www.binance.com/api'

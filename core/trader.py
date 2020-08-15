@@ -4,16 +4,12 @@
 trader
 
 '''
-import os
-import sys
-import time
 import logging
-import datetime
 import threading
-from . import rest_api
-import conditions as con
-import TradeIndicators as TI
+import time
 
+import TradeIndicators as TI
+import conditions as con
 
 ## Minimum price rounding.
 pRounding = 8
