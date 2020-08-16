@@ -359,3 +359,18 @@ class BinanceREST:
                     return False
 
         return False
+
+    def get_native_price(self, native_currency, currency, reverse = False):
+        """
+        https://api.binance.com/api/v3/ticker/price?symbol=LTCTUSD
+        {"symbol":"LTCTUSD","price":"62.13000000"}
+        """
+        if reverse:
+            symbol = native_currency + currency
+        else:
+            symbol = currency + native_currency
+
+        logging.debug("REST: Getting native price {0} ".format(symbol))
+        native_price = self.api_request('GET', '/v3/ticker/price', {'symbol': symbol})
+
+        return native_price

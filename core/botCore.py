@@ -11,7 +11,7 @@ import threading
 import time
 from decimal import Decimal
 
-from . import rest_api, socketAPI, trader
+from core import rest_api, socketAPI, trader
 
 ## Base historic candle reach.
 BASE_CANDLE_LIMIT = 200
@@ -20,7 +20,7 @@ BASE_CANDLE_LIMIT = 200
 class BotCore():
 
 
-    def __init__(self, run_type, MAC, trading_markets, candle_Interval, publicKey, privateKey):
+    def __init__(self, run_type, MAC, trading_markets, candle_Interval, publicKey, privateKey, native_currency):
         """
          #
          #
@@ -34,6 +34,7 @@ class BotCore():
         self.run_type = run_type
         self.wsReady = False
         self.initAccCheck = False
+        self.native_currency = native_currency
 
         ## Live trader data.
         self.maxLiveTraders = 0
@@ -65,7 +66,7 @@ class BotCore():
             fmtMarket = '{0}-{1}'.format(market['quoteAsset'], market['baseAsset'])
 
             ## As currently only BTC markets can be traded it will only allow BTC markets.
-            if market['quoteAsset'] != 'BTC':
+            if market['quoteAsset'] != 'BTC': #USDT? native?
                 continue
 
             ## If the current base asset is on the blacklist then dont add it.
@@ -146,7 +147,14 @@ class BotCore():
         liveData = {}
         queryURL = ''
 
-        lSymbols = ['{0}{1}'.format(symbol[4:], symbol[:3]).lower() for symbol in self.trading_markets]
+        trading_pairs = []
+        for pair in self.trading_markets:
+            trading_pair = pair.split('-')
+            trading_pairs.append(trading_pair)
+
+        lSymbols = []
+        for pair in trading_pairs:
+            lSymbols.append(pair[1].lower() + pair[0].lower())
 
         for lSymbol in lSymbols:
             queryURL += '{0}@kline_1m/{0}@depth5/'.format(lSymbol)

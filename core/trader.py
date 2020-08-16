@@ -38,11 +38,11 @@ class BaseTrader(object):
         self.run_type = run_type
 
         # Holds update timers.
-        self.last_inter_update = 0 # Last time an update occured on a set interval.
-        
+        self.last_inter_update = 0  # Last time an update occured on a set interval.
+
         # Holds the candles.
         self.candles = None
-        
+
         # Holds the trade indicators.
         self.indicators = {}
 
@@ -51,40 +51,43 @@ class BaseTrader(object):
 
         # Holds the current symbolic pair of the market being traded.
         self.symbol = symbol
-        
+
         # Holds runtime info of the trader.
         self.runtime = {
-            'state':'STOP',   # The traders state. [RUN, FORCE_STANDBY, STANDBY, STOP, COMPLETED_TRADE]
-            'time':0}       # Last time an update was DONE.
-        
+            'state': 'STOP',  # The traders state. [RUN, FORCE_STANDBY, STANDBY, STOP, COMPLETED_TRADE]
+            'time': 0}  # Last time an update was DONE.
+
         # Holds current market information.
         self.prices = {
-            'lastPrice':None,   # Last price.
-            'askPrice':None,    # Ask price.
-            'bidPrice':None}    # Bid price.
-        
+            'lastPrice': None,  # Last price.
+            'askPrice': None,   # Ask price.
+            'bidPrice': None,   # Bid price.
+            'buy_price': None,  # Buy price.
+            'sell_price':None}  # sell price
+
         # Holds information on current/past trades of the trader.
         self.trade_information = {
-            'MAC':0,                            # 'MAC' this holds the Maximum Allowed Currency the bot can trade with.
-            'currencyLeft':0,                   # 'currencyLeft' this holds the currency the bot has left to trade.
-            'buyPrice':0,                       # 'buyPrice' this holds the buy price for the bot.
-            'sellPrice':0,                      # 'sellPrice' this holds the sell price of the bot.
-            'tokenBase':0,                      # 'tokenBase' this holds the base tokens bought.
-            'canOrder':False,                   # 'canOrder' this will determin if the bot is allowed to place an order or not.
-            'orderType':{'B':'WAIT', 'S':None}, # 'orderType' holds the current type of trade being carried out (B:[WAIT/SIGNAL/RSI] S:[LIMIT/SIGNAL/Trail])
-            'orderStatus':{'B':None, 'S':None}, # 'orderStatus' holds the status for the current order (B:[None/PLACED/PF/Locked] S:[None/PLACED/PF/Locked/PF_Sig])
-            'updateOrder':False,                # 'updateOrder' this is used to determin if a PLACED order should be updated
-            '#Trades':0,                        # '#Trades' this holds the number of FULL trades made by this market.
-            'overall':0}                        # 'overall' this holds the overall outcomes for this markets trades.
+            'MAC': 0,  # 'MAC' this holds the Maximum Allowed Currency the bot can trade with.
+            'currencyLeft': 0,  # 'currencyLeft' this holds the currency the bot has left to trade.
+            'buyPrice': 0,  # 'buyPrice' this holds the buy price for the bot.
+            'sellPrice': 0,  # 'sellPrice' this holds the sell price of the bot.
+            'tokenBase': 0,  # 'tokenBase' this holds the base tokens bought.
+            'canOrder': False,  # 'canOrder' this will determin if the bot is allowed to place an order or not.
+            'orderType': {'B': 'WAIT', 'S': None},
+            # 'orderType' holds the current type of trade being carried out (B:[WAIT/SIGNAL/RSI] S:[LIMIT/SIGNAL/Trail])
+            'orderStatus': {'B': None, 'S': None},
+            # 'orderStatus' holds the status for the current order (B:[None/PLACED/PF/Locked] S:[None/PLACED/PF/Locked/PF_Sig])
+            'updateOrder': False,  # 'updateOrder' this is used to determin if a PLACED order should be updated
+            '#Trades': 0,  # '#Trades' this holds the number of FULL trades made by this market.
+            'overall': 0}  # 'overall' this holds the overall outcomes for this markets trades.
 
         # Holds the rules required for the market.
         self.rules = {
-            'LOT_SIZE':filters['lotSize'],
-            'TICK_SIZE':filters['tickSize'],
-            'MINIMUM_NOTATION':filters['minNotional']}
-        
-        logging.debug('Initilized trader variables. [{0}]'.format(symbol))
+            'LOT_SIZE': filters['lotSize'],
+            'TICK_SIZE': filters['tickSize'],
+            'MINIMUM_NOTATION': filters['minNotional']}
 
+        logging.debug('Initilized trader variables. [{0}]'.format(symbol))
 
     def start(self, MAC):
         '''
@@ -118,7 +121,6 @@ class BaseTrader(object):
 
         logging.info('Started trader. [{0}]'.format(self.symbol))
 
-
     def stop(self):
         ''' 
         Stop the trader.
@@ -131,7 +133,6 @@ class BaseTrader(object):
         self.run_type = None
 
         logging.info('Stopped trader. [{0}]'.format(self.symbol))
-
 
     def _main(self):
         '''
@@ -163,7 +164,8 @@ class BaseTrader(object):
                 tInfo = self.trade_information
 
                 ## Find out the status on a order that is PLACED.
-                if (tInfo['orderStatus']['B'] != None or tInfo['orderStatus']['S'] != None) or (self.run_type == 'TEST'):
+                if (tInfo['orderStatus']['B'] != None or tInfo['orderStatus']['S'] != None) or (
+                        self.run_type == 'TEST'):
                     self._order_status_manager()
 
                 ## If the state is not on standby then check the trade conditions.
@@ -171,7 +173,6 @@ class BaseTrader(object):
                     self._trade_manager()
 
             time.sleep(4)
-
 
     def _updater(self):
         '''
@@ -190,7 +191,7 @@ class BaseTrader(object):
         current_unix_time = time.time()
 
         ## Periodic timer (1 min) 
-        if self.last_inter_update+60 <= current_unix_time:
+        if self.last_inter_update + 60 <= current_unix_time:
             self.last_inter_update = current_unix_time
 
         ## Re-calculate Indicators
@@ -200,7 +201,7 @@ class BaseTrader(object):
         ## [INDICATOR] ----->
         try:
             self.indicators['MACD'] = TI.get_MACD(self.candles['close'], signal=14)
-        except :
+        except:
             self.indicators['MACD'] = MACD[:]
 
         ## Main Updater
@@ -224,7 +225,6 @@ class BaseTrader(object):
 
         if self.runtime['state'] == 'SETUP':
             self.runtime['state'] = 'RUN'
-
 
     def _order_status_manager(self):
         '''
@@ -268,7 +268,7 @@ class BaseTrader(object):
                     token = self.symbol[:-3]
                     balance = self.rest_api.get_balance(token)['free']
                 elif self.run_type == 'TEST':
-                    balance = float('{0:.8f}'.format(tInfo['currencyLeft']/self.prices['lastPrice']))
+                    balance = float('{0:.8f}'.format(tInfo['currencyLeft'] / self.prices['lastPrice']))
 
                 self.trade_information['tokenBase'] = balance
 
@@ -279,12 +279,12 @@ class BaseTrader(object):
                 # Here all the necissary variables and values are added to signal a completion on a sell trade.
 
                 fee = self.trade_information['MAC'] * COMMISION_FEE
-                self.trade_information['overall'] += float('{0:.8f}'.format(((tInfo['sellPrice']-tInfo['buyPrice'])*tInfo['tokenBase'])-fee))
+                self.trade_information['overall'] += float(
+                    '{0:.8f}'.format(((tInfo['sellPrice'] - tInfo['buyPrice']) * tInfo['tokenBase']) - fee))
                 self.trade_information['#Trades'] += 1
 
                 self._setup_buy()
                 logging.info('Completed sell order. [{0}]'.format(self.symbol))
-
 
     def _trade_manager(self):
         ''' 
@@ -304,7 +304,7 @@ class BaseTrader(object):
 
         orderType = None
         updateOrder = tInfo['updateOrder']
-        order = {'place':False}
+        order = {'place': False}
 
         if tInfo['orderType']['S'] and tInfo['orderStatus']['S'] != 'ORDER_LOCK':
             ## Manager Sell Conditions.
@@ -313,9 +313,9 @@ class BaseTrader(object):
 
             # Check the conditions in place to see if a order can be setup.
             new_order = con.sell_conditions(
-                self.indicators, 
-                self.prices, 
-                tInfo, 
+                self.indicators,
+                self.prices,
+                tInfo,
                 self.candles)
 
             if new_order['place']:
@@ -327,7 +327,7 @@ class BaseTrader(object):
                 if orderType == 'SIGNAL':
                     # Setup a signal sell order.
                     if (price != tInfo['sellPrice'] and tInfo['sellPrice'] != askPrice) or updateOrder:
-                        order = {'place':True, 'side':'SELL'}
+                        order = {'place': True, 'side': 'SELL'}
 
                 else:
                     logging.critical('The trade type [{0}] has not been configured'.format(new_order['tType']))
@@ -346,9 +346,9 @@ class BaseTrader(object):
 
             # Check the conditions in place to see if a order can be setup.
             new_order = con.buy_conditions(
-                self.indicators, 
-                self.prices, 
-                tInfo, 
+                self.indicators,
+                self.prices,
+                tInfo,
                 self.candles)
 
             if new_order['place']:
@@ -360,7 +360,7 @@ class BaseTrader(object):
                 if orderType == 'SIGNAL':
                     # Setup a signal buy order.
                     if (price != tInfo['buyPrice'] and tInfo['buyPrice'] != bidPrice) or updateOrder:
-                        order = {'place':True, 'side':'BUY'}
+                        order = {'place': True, 'side': 'BUY'}
 
                 else:
                     logging.critical('The trade type [{0}] has not been configured'.format(new_order['tType']))
@@ -386,10 +386,10 @@ class BaseTrader(object):
                 # Attempt to place an order on the market.
                 orderInfo = self.rest_api.order_placer(
                     self.symbol,
-                    self.rules, 
-                    self.trade_information, 
-                    order['side'], 
-                    'LIMIT', 
+                    self.rules,
+                    self.trade_information,
+                    order['side'],
+                    'LIMIT',
                     price=price)
 
                 print('orderInfo: {0} [{1}]'.format(orderInfo, self.symbol))
@@ -403,11 +403,10 @@ class BaseTrader(object):
             elif self.run_type == 'TEST':
                 orderInfo = True
                 code = 0
-            
+
             # Check the status of the order code.
             if orderInfo:
                 self._code_manager(code, order['side'], price=price, orderType=orderType)
-
 
     def _balance_manager(self):
         '''
@@ -425,26 +424,26 @@ class BaseTrader(object):
                 ## If the current order status for buy is anything but WAITing.
                 open_order = self.rest_api.check_open_orders(symbol)
                 if not open_order:
-                    return({'code':code, 'msg':message})
+                    return ({'code': code, 'msg': message})
 
-                if open_order == 'Empty': 
+                if open_order == 'Empty':
                     assetBalance = self.rest_api.get_balance(token)
 
                     if not assetBalance:
-                        return({'code':code, 'msg':message})
+                        return ({'code': code, 'msg': message})
 
-                    if assetBalance['free']*self.prices['lastPrice'] > self.rules['MINIMUM_NOTATION']:
+                    if assetBalance['free'] * self.prices['lastPrice'] > self.rules['MINIMUM_NOTATION']:
                         ## If the balance of the asset is over the minimum amount required and the order is empty the order is considered complete.
                         code, message = 200, 'Finished order buy. [{0}]'.format(symbol)
                     else:
-                        return({'code':code, 'msg':message})
+                        return ({'code': code, 'msg': message})
                 else:
                     balanceBTC = self.rest_api.get_balance('BTC')
                     if not balanceBTC:
-                        return({'code':code, 'msg':message})
+                        return ({'code': code, 'msg': message})
 
-                     ## If there is enough BTC to place new order and there is enough currency left to place an order it will be updated.
-                    if not((balanceBTC['free']+balanceBTC['locked']) > tInfo['currencyLeft']):
+                    ## If there is enough BTC to place new order and there is enough currency left to place an order it will be updated.
+                    if not ((balanceBTC['free'] + balanceBTC['locked']) > tInfo['currencyLeft']):
                         code, message = 102, 'Lock Buy. [{0}]'.format(symbol)
                     else:
                         ## Conditions for the order being PLACED and still being open.
@@ -457,7 +456,7 @@ class BaseTrader(object):
             else:
                 balanceBTC = self.rest_api.get_balance('BTC')
                 if not balanceBTC:
-                    return({'code':code, 'msg':message})
+                    return ({'code': code, 'msg': message})
 
                 ## Make sure there is enough BTC to place and buy order.
                 if balanceBTC['free'] < tInfo['currencyLeft']:
@@ -467,15 +466,15 @@ class BaseTrader(object):
             ## This deals with the Sell side for checking balances and trades.
             assetBalance = self.rest_api.get_balance(token)
             if not assetBalance:
-                return({'code':code, 'msg':message})
+                return ({'code': code, 'msg': message})
 
-            walletAssetValue = (assetBalance['locked']+assetBalance['free'])*self.prices['lastPrice']
-            self.trade_information['currencyLeft'] = tInfo['MAC'] - (assetBalance['free']*self.prices['lastPrice'])
+            walletAssetValue = (assetBalance['locked'] + assetBalance['free']) * self.prices['lastPrice']
+            self.trade_information['currencyLeft'] = tInfo['MAC'] - (assetBalance['free'] * self.prices['lastPrice'])
 
             if tInfo['orderStatus']['S'] in ['PLACED', 'ORDER_LOCK']:
                 open_order = self.rest_api.check_open_orders(symbol)
                 if not open_order:
-                    return({'code':code, 'msg':message})
+                    return ({'code': code, 'msg': message})
 
                 if open_order != 'Empty':
                     ## Conditions for the order being PLACED and still being open.
@@ -484,7 +483,7 @@ class BaseTrader(object):
                         code, message = 100, 'Enough to re-place Sell. [{0}]'.format(symbol)
                     else:
                         ## If the current asset value is under the minimum required to place an order the bot will lock its sell order.
-                        code, message = 102, 'Lock Sell. [{0}]'.format(symbol) 
+                        code, message = 102, 'Lock Sell. [{0}]'.format(symbol)
                 else:
                     if walletAssetValue < self.rules['MINIMUM_NOTATION']:
                         ## If the wallet asset value is less than the minimum to place and order and also the open orders are empty the order is considered complete.
@@ -496,10 +495,9 @@ class BaseTrader(object):
                     code, message = 101, 'Enough to place new Sell. [{0}]'.format(symbol)
 
         if code:
-            logging.info('Balance manager:{0}'.format({'code':code, 'msg':message}, symbol))
+            logging.info('Balance manager:{0}'.format({'code': code, 'msg': message}, symbol))
 
-        return({'code':code, 'msg':message})
-
+        return ({'code': code, 'msg': message})
 
     def _code_manager(self, code, side=None, **kwargs):
         '''
@@ -538,7 +536,7 @@ class BaseTrader(object):
                 pass
             elif side == 'SELL':
                 pass
-            
+
             self.trade_information['updateOrder'] = True
 
         elif code == 102:
@@ -555,7 +553,6 @@ class BaseTrader(object):
             elif side == 'SELL':
                 self.trade_information['orderStatus']['S'] = 'DONE'
 
-
     def _setup_sell(self):
         ''' Used to setup the trader for selling after a buy has been completed. '''
         self.trade_information['orderStatus']['B'] = None
@@ -564,7 +561,6 @@ class BaseTrader(object):
         self.trade_information['orderType']['B'] = None
         self.trade_information['orderType']['S'] = 'WAIT'
         self.trade_information['updateOrder'] = True
-
 
     def _setup_buy(self):
         ''' Used to setup the trader for buying after a sell has been completed. '''
@@ -577,7 +573,6 @@ class BaseTrader(object):
         self.trade_information['orderType']['B'] = 'WAIT'
         self.trade_information['orderType']['S'] = None
 
-
     def give_trader_data(self, data):
         ''' This is used to give data to the trader (passed from the socket). '''
 
@@ -587,7 +582,7 @@ class BaseTrader(object):
         except Exception as e:
             self.prices['lastPrice'] = lastPrice
             return
-        
+
         if data['bid'] != None:
             self.prices['bidPrice'] = float(data['bid'])
             self.prices['askPrice'] = float(data['ask'])
