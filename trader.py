@@ -15,18 +15,20 @@ import conditions as con
 pRounding = 8
 
 ## Base commission fee with binance.
-COMMISION_FEE = 0.00075
 
 
 class Trader(object):
 
-    def __init__(self, symbol, filters, restAPI, runType):
+    def __init__(self, symbol, filters, restAPI, runType, fee = 0.075):
         '''
         Initilise the trader object and all of the atributes that are required for it to be run.
         '''
 
         ## Set the current restAPI.
         self.RESTapi = restAPI
+
+        # Set fee
+        self.commmision_fee = fee / 100
 
         ## Run type for the bot being either real or test.
         self.botRunType = runType
@@ -256,7 +258,7 @@ class Trader(object):
 
             elif side == 'SELL' and (tInfo['orderStatus']['S'] == 'Done' or self.botRunType == 'test'):
                 ## Completed order on sell side.
-                fee = self.TradesInformation['MAC'] * COMMISION_FEE
+                fee = self.TradesInformation['MAC'] * self.commmision_fee
                 self.TradesInformation['overall'] += float('{0:.8f}'.format(((tInfo['sellPrice']-tInfo['buyPrice'])*tInfo['tokenBase'])-fee))
                 self.TradesInformation['#Trades'] += 1
 
